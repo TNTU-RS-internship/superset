@@ -1384,11 +1384,12 @@ SQL_VALIDATORS_BY_ENGINE = {
 # use the "engine_name" attribute of the corresponding DB engine spec
 # in `superset/db_engine_specs/`.
 PREFERRED_DATABASES: list[str] = [
-    "PostgreSQL",
-    "Presto",
     "MySQL",
+    "MySQL Auto",
+    "PostgreSQL",
     "SQLite",
-    # etc.
+    "Apache Spark SQL",
+    "Apache Hive"
 ]
 # When adding a new database we try to connect to it. Depending on which parameters are
 # incorrect this could take a couple minutes, until the SQLAlchemy driver pinging the
