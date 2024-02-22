@@ -425,6 +425,9 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         """
         Returns true if the DB engine spec supports a given SQLAlchemy backend/driver.
         """
+        if database_name is not None and database_name != cls.engine_name:
+            return False
+
         # check the backend first
         if backend != cls.engine and backend not in cls.engine_aliases:
             return False
@@ -434,10 +437,6 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         # compatibility
         if not cls.drivers or driver is None:
             return True
-
-        # check the database name if provided
-        if database_name is not None and database_name != cls.engine_name:
-            return False
 
         return driver in cls.drivers
 

@@ -279,6 +279,12 @@ class DatabaseParametersSchemaMixin:  # pylint: disable=too-few-public-methods
             or data.pop("backend", None)
         )
         driver = data.pop("driver", None)
+        engine_name = (
+            data.pop("engine_name", None)
+            or parameters.pop("engine_name", None)
+            or data.pop("database_name", None)
+            or parameters.pop("database_name", None)
+        )
 
         configuration_method = data.get("configuration_method")
         if configuration_method == ConfigurationMethod.DYNAMIC_FORM:
@@ -291,7 +297,7 @@ class DatabaseParametersSchemaMixin:  # pylint: disable=too-few-public-methods
                         )
                     ]
                 )
-            engine_spec = get_engine_spec(engine, driver)
+            engine_spec = get_engine_spec(engine, engine_name, driver)
 
             if not hasattr(engine_spec, "build_sqlalchemy_uri") or not hasattr(
                 engine_spec, "parameters_schema"
@@ -349,6 +355,9 @@ class DatabaseValidateParametersSchema(Schema):
     )
     engine = fields.String(
         required=True, metadata={"description": "SQLAlchemy engine to use"}
+    )
+    engine_name = fields.String(
+        required=False, metadata={"description": "Engine name"}
     )
     driver = fields.String(
         allow_none=True, metadata={"description": "SQLAlchemy driver to use"}

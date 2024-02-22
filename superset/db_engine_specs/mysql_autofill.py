@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from sqlalchemy import create_engine
-from urllib import parse
 from superset.databases.utils import make_url_safe
-from typing import Any, TypedDict, Optional
+from typing import Any, TypedDict
 
 from flask_babel import gettext as __
 from marshmallow import fields, Schema
@@ -11,10 +10,10 @@ from sqlalchemy.engine.url import URL
 
 from superset.db_engine_specs.mysql import MySQLEngineSpec
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
-from superset.utils.network import is_hostname_valid, is_port_open
+from superset.utils.network import is_port_open
 
 DATABASE_NAME = "database_try"
-HOST_NAME = "localhost"
+HOST_NAME = "127.0.0.1"
 PORT_NAME = 3306
 
 
@@ -44,10 +43,6 @@ class MySQLAutoEngineSpec(MySQLEngineSpec):
     """Custom Engine for MySQL Auto Connection"""
 
     engine_name = "MySQL Auto"
-    sqlalchemy_uri_placeholder = (
-        "mysql://user:password@localhost:3306/database_try[?key=value&key=value]"
-    )
-
     disable_ssh_tunneling = True
     parameters_schema = MySQLAutoParametersSchema()
 
@@ -57,10 +52,9 @@ class MySQLAutoEngineSpec(MySQLEngineSpec):
         parameters: MySQLAutoParametersType,
         encrypted_extra: dict[str, str] | None = None,
     ) -> str:
-
         return str(
             URL.create(
-                f"{cls.engine}+{cls.engine_name}+{cls.default_driver}".rstrip("+"),
+                f"{cls.engine}+{cls.default_driver}".rstrip("+"),
                 username=parameters.get("username"),
                 password=parameters.get("password"),
                 host=HOST_NAME,
@@ -70,44 +64,26 @@ class MySQLAutoEngineSpec(MySQLEngineSpec):
         )
 
     @classmethod
-    def adjust_engine_params(
-        cls,
-        uri: URL,
-        connect_args: dict[str, Any],
-        catalog: Optional[str] = None,
-        schema: Optional[str] = None,
-    ) -> tuple[URL, dict[str, Any]]:
-        uri, new_connect_args = super().adjust_engine_params(
-            uri,
-            connect_args,
-            catalog,
-            schema,
-        )
-
-        if schema:
-            uri = uri.set(database=parse.quote(schema, safe=""))
-
-        return uri, new_connect_args
-
-    @classmethod
     def get_parameters_from_uri(  # pylint: disable=unused-argument
         cls, uri: str, encrypted_extra: dict[str, Any] | None = None
     ) -> MySQLAutoParametersType:
         url = make_url_safe(uri)
         return {
             "username": url.username,
-            "password": str(url.password or ""),
+            "password": str(url.password or "")
         }
 
-
     @classmethod
-    def validate_parameters(cls, properties: MySQLAutoPropertiesType) -> list[SupersetError]:
+    def validate_parameters(cls, properties: MySQLAutoPropertiesType) -> list[
+        SupersetError]:
         """
         Validates parameters for a MySQL connection.
         """
         errors: list[SupersetError] = []
 
         parameters = properties.get("parameters", {})
+
+
         required = {"username", "password"}
 
         missing_params = required - set(parameters.keys())
@@ -121,14 +97,16 @@ class MySQLAutoEngineSpec(MySQLEngineSpec):
                 )
             )
 
+        parameters.setdefault("host", HOST_NAME)
+        parameters.setdefault("port", str(PORT_NAME))
+        parameters.setdefault("database", DATABASE_NAME)
+
         username = parameters.get("username", "")
         password = parameters.get("password", "")
-        host = HOST_NAME
-        database = DATABASE_NAME
-        port = PORT_NAME
+        host = parameters["host"]
+        port = parameters["port"]
+        database = parameters["database"]
 
-        host = HOST_NAME
-        port = PORT_NAME
 
         if not is_port_open(host, port):
             errors.append(
@@ -143,7 +121,8 @@ class MySQLAutoEngineSpec(MySQLEngineSpec):
         # Attempting to connect to MySQL
         try:
             # Assuming MySQL is running locally on default port 3306
-            url = "mysql://{}:{}@{}:{}/{}".format(username, password, host, port, database)
+            url = f"mysql://{username}:{password}@{host}:{port}/{database}"
+
             # Attempt to establish a connection
             engine = create_engine(url)
             engine.connect()
