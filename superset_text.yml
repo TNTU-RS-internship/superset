@@ -21,8 +21,9 @@
 #  The image can be hosted locally inside your static/file directory or online (e.g. S3)
 
 DB_IMAGES:
-  postgresql: "/static/assets/images/database_images/postgres.png"
-  mysql: "/static/assets/images/database_images/mysql.png"
-  hive: "/static/assets/images/database_images/hive.png"
-  spark: "/static/assets/images/database_images/spark.png"
-  sqlite: "/static/assets/images/database_images/sqlite.png"
+  PostgreSQL: "/static/assets/images/database_images/postgres.png"
+  MySQL: "/static/assets/images/database_images/mysql.png"
+  MySQL Auto: "/static/assets/images/database_images/mysql_auto.png"
+  Apache Hive: "/static/assets/images/database_images/hive.png"
+  Apache Spark SQL: "/static/assets/images/database_images/spark.png"
+  SQLite: "/static/assets/images/database_images/sqlite.png"

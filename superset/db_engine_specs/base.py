@@ -421,7 +421,7 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         return cls.supports_backend(backend, driver)
 
     @classmethod
-    def supports_backend(cls, backend: str, driver: str | None = None) -> bool:
+    def supports_backend(cls, backend: str, database_name: str | None = None, driver: str | None = None) -> bool:
         """
         Returns true if the DB engine spec supports a given SQLAlchemy backend/driver.
         """
@@ -434,6 +434,10 @@ class BaseEngineSpec:  # pylint: disable=too-many-public-methods
         # compatibility
         if not cls.drivers or driver is None:
             return True
+
+        # check the database name if provided
+        if database_name is not None and database_name != cls.engine_name:
+            return False
 
         return driver in cls.drivers
 
@@ -2022,7 +2026,7 @@ class BasicParametersMixin:
 
         return str(
             URL.create(
-                f"{cls.engine}+{cls.default_driver}".rstrip("+"),  # type: ignore
+                f"{cls.engine}+{cls.engine_name}+{cls.default_driver}".rstrip("+"),  # type: ignore
                 username=parameters.get("username"),
                 password=parameters.get("password"),
                 host=parameters["host"],

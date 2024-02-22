@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from sqlalchemy import create_engine
+from urllib import parse
 from superset.databases.utils import make_url_safe
-from superset.db_engine_specs.base import BasicParametersMixin
-import logging
-from typing import Any, TypedDict
+from typing import Any, TypedDict, Optional
 
 from flask_babel import gettext as __
 from marshmallow import fields, Schema
@@ -11,8 +11,11 @@ from sqlalchemy.engine.url import URL
 
 from superset.db_engine_specs.mysql import MySQLEngineSpec
 from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
+from superset.utils.network import is_hostname_valid, is_port_open
 
-_logger = logging.getLogger()
+DATABASE_NAME = "database_try"
+HOST_NAME = "localhost"
+PORT_NAME = 3306
 
 
 class MySQLAutoParametersSchema(Schema):
@@ -22,7 +25,7 @@ class MySQLAutoParametersSchema(Schema):
         metadata={"description": __("Username")},
     )
     password = fields.String(
-        required=False,
+        required=True,
         allow_none=True,
         metadata={"description": __("Password")},
     )
@@ -37,13 +40,15 @@ class MySQLAutoPropertiesType(TypedDict):
     parameters: MySQLAutoParametersType
 
 
-class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
+class MySQLAutoEngineSpec(MySQLEngineSpec):
     """Custom Engine for MySQL Auto Connection"""
 
     engine_name = "MySQL Auto"
-    engine = "mysql"
-    default_driver = "mysqldb"
+    sqlalchemy_uri_placeholder = (
+        "mysql://user:password@localhost:3306/database_try[?key=value&key=value]"
+    )
 
+    disable_ssh_tunneling = True
     parameters_schema = MySQLAutoParametersSchema()
 
     @classmethod
@@ -52,16 +57,37 @@ class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
         parameters: MySQLAutoParametersType,
         encrypted_extra: dict[str, str] | None = None,
     ) -> str:
+
         return str(
             URL.create(
-                f"{cls.engine}+{cls.default_driver}".rstrip("+"),
+                f"{cls.engine}+{cls.engine_name}+{cls.default_driver}".rstrip("+"),
                 username=parameters.get("username"),
-                database="database_try",
                 password=parameters.get("password"),
-                host="localhost",
-                port=3306,
+                host=HOST_NAME,
+                port=PORT_NAME,
+                database=DATABASE_NAME
             )
         )
+
+    @classmethod
+    def adjust_engine_params(
+        cls,
+        uri: URL,
+        connect_args: dict[str, Any],
+        catalog: Optional[str] = None,
+        schema: Optional[str] = None,
+    ) -> tuple[URL, dict[str, Any]]:
+        uri, new_connect_args = super().adjust_engine_params(
+            uri,
+            connect_args,
+            catalog,
+            schema,
+        )
+
+        if schema:
+            uri = uri.set(database=parse.quote(schema, safe=""))
+
+        return uri, new_connect_args
 
     @classmethod
     def get_parameters_from_uri(  # pylint: disable=unused-argument
@@ -70,8 +96,9 @@ class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
         url = make_url_safe(uri)
         return {
             "username": url.username,
-            "password": str(url.password or "")
+            "password": str(url.password or ""),
         }
+
 
     @classmethod
     def validate_parameters(cls, properties: MySQLAutoPropertiesType) -> list[SupersetError]:
@@ -81,9 +108,9 @@ class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
         errors: list[SupersetError] = []
 
         parameters = properties.get("parameters", {})
-        required_params = {"password", "username"}
+        required = {"username", "password"}
 
-        missing_params = required_params - set(parameters.keys())
+        missing_params = required - set(parameters.keys())
         if missing_params:
             errors.append(
                 SupersetError(
@@ -96,14 +123,30 @@ class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
 
         username = parameters.get("username", "")
         password = parameters.get("password", "")
+        host = HOST_NAME
+        database = DATABASE_NAME
+        port = PORT_NAME
+
+        host = HOST_NAME
+        port = PORT_NAME
+
+        if not is_port_open(host, port):
+            errors.append(
+                SupersetError(
+                    message="The port is closed.",
+                    error_type=SupersetErrorType.CONNECTION_PORT_CLOSED_ERROR,
+                    level=ErrorLevel.ERROR,
+                    extra={"invalid": ["port"]},
+                ),
+            )
 
         # Attempting to connect to MySQL
         try:
             # Assuming MySQL is running locally on default port 3306
-            url = "mysql://{}:{}@localhost:3306/database_test".format(username, password)
+            url = "mysql://{}:{}@{}:{}/{}".format(username, password, host, port, database)
             # Attempt to establish a connection
-            # engine = create_engine(url)
-            # engine.connect()
+            engine = create_engine(url)
+            engine.connect()
         except Exception as e:
             errors.append(
                 SupersetError(
@@ -114,4 +157,3 @@ class MySQLAutoEngineSpec(MySQLEngineSpec, BasicParametersMixin):
             )
 
         return errors
-
