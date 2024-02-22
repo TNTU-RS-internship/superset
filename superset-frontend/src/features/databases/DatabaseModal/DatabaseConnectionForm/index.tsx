@@ -170,7 +170,7 @@ const DatabaseConnectionForm = ({
             key === 'database_name',
         ).map(field =>
           FORM_FIELD_MAP[field]({
-            required: parameters.required?.includes(field),
+            required: parameters.required?.includes(field) ? true : false,
             changeMethods: {
               onParametersChange,
               onChange,
