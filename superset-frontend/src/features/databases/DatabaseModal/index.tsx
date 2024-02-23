@@ -632,7 +632,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
       (available: { engine: string | undefined; name: string | undefined }) =>
         // TODO: we need a centralized engine in one place
         available.engine === (isEditMode ? db?.backend : db?.engine) &&
-        available.name === db?.database_name,
+        available.name === dbName,
     ) || {};
 
   // Test Connection logic
@@ -945,6 +945,7 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
       const { engine, parameters, engine_information, default_driver } =
         selectedDbModel;
       const isDynamic = parameters !== undefined;
+      setDbName(database_name);
       setDB({
         type: ActionType.dbSelected,
         payload: {
