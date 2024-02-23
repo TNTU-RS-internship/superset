@@ -787,13 +787,15 @@ class Database(
         cls, url: URL
     ) -> builtins.type[db_engine_specs.BaseEngineSpec]:
         backend = url.get_backend_name()
+        engine_name = cls.database_name
         try:
             driver = url.get_driver_name()
+
         except NoSuchModuleError:
             # can't load the driver, fallback for backwards compatibility
             driver = None
 
-        return db_engine_specs.get_engine_spec(backend, driver)
+        return db_engine_specs.get_engine_spec(backend,  driver)
 
     def grains(self) -> tuple[TimeGrain, ...]:
         """Defines time granularity database-specific expressions.

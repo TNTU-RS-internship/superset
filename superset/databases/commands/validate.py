@@ -47,12 +47,13 @@ class ValidateDatabaseParametersCommand(BaseCommand):
 
         engine = self._properties["engine"]
         driver = self._properties.get("driver")
+        database_name = self._properties.get("database_name")
 
         if engine in BYPASS_VALIDATION_ENGINES:
             # Skip engines that are only validated onCreate
             return
 
-        engine_spec = get_engine_spec(engine, driver)
+        engine_spec = get_engine_spec(engine, database_name, driver)
         if not hasattr(engine_spec, "parameters_schema"):
             raise InvalidEngineError(
                 SupersetError(
@@ -90,6 +91,7 @@ class ValidateDatabaseParametersCommand(BaseCommand):
             self._properties.get("parameters"),
             encrypted_extra,
         )
+
         if self._model and sqlalchemy_uri == self._model.safe_sqlalchemy_uri():
             sqlalchemy_uri = self._model.sqlalchemy_uri_decrypted
         database = DatabaseDAO.build_db_for_connection_test(
