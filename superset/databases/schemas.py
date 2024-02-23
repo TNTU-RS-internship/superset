@@ -280,10 +280,9 @@ class DatabaseParametersSchemaMixin:  # pylint: disable=too-few-public-methods
         )
         driver = data.pop("driver", None)
         engine_name = (
-            data.pop("engine_name", None)
-            or parameters.pop("engine_name", None)
-            or data.pop("database_name", None)
-            or parameters.pop("database_name", None)
+            data.get("engine_name", None)
+            or parameters.get("engine_name", None)
+            or data.get("database_name", None)
         )
 
         configuration_method = data.get("configuration_method")

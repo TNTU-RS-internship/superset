@@ -28,6 +28,14 @@ class MySQLAutoParametersSchema(Schema):
         allow_none=True,
         metadata={"description": __("Password")},
     )
+    def load(self, data, **kwargs):
+        # Implement your deserialization logic here
+        # For example:
+        username = data.get('username')
+        password = data.get('password')
+        # Perform any necessary validation or processing
+        return {'username': username, 'password': password, 'database_name': DATABASE_NAME, 'host': HOST_NAME, 'port': PORT_NAME}
+
 
 
 class MySQLAutoParametersType(TypedDict):
