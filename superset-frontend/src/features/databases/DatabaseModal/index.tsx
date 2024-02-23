@@ -629,9 +629,10 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
 
   const dbModel: DatabaseForm =
     availableDbs?.databases?.find(
-      (available: { engine: string | undefined }) =>
+      (available: { engine: string | undefined; name: string | undefined }) =>
         // TODO: we need a centralized engine in one place
-        available.engine === (isEditMode ? db?.backend : db?.engine),
+        available.engine === (isEditMode ? db?.backend : db?.engine) &&
+        available.name === db?.database_name,
     ) || {};
 
   // Test Connection logic
@@ -1041,9 +1042,10 @@ const DatabaseModal: FunctionComponent<DatabaseModalProps> = ({
         .map((database: DatabaseForm) => (
           <IconButton
             className="preferred-item"
+
             onClick={() => setDatabaseModel(database.name)}
             buttonText={database.name}
-            icon={dbImages?.[database.engine]}
+            icon={dbImages?.[database.name]}
             key={`${database.name}`}
           />
         ))}

@@ -18,7 +18,7 @@
 
 # To set the images of your preferred database, you may create a mapping here with engine and locations of the relevant images. The image can be hosted locally inside your static/file directory or online (e.g. S3)
 
-# DB_IMAGES:
-#   postgresql: "path/to/image/postgres.jpg"
-#   bigquery: "path/to/s3bucket/bigquery.jpg"
-#   snowflake: "path/to/image/snowflake.jpg"
+DB_IMAGES:
+  "PostgreSQL": "/static/assets/images/database_images/postgresql.png"
+  "MySQL": "/static/assets/images/database_images/mysql.png"
+  "SQLite": "/static/assets/images/database_images/sqlite.png"
